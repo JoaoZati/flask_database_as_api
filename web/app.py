@@ -9,6 +9,7 @@ from flask import Flask, jsonify, request
 from flask_restful import Api, Resource
 
 from pymongo import MongoClient
+from debugger import initialize_debugger
 
 app = Flask(__name__)
 api = Api(app)
@@ -63,4 +64,7 @@ api.add_resource(Register, "/register")
 
 
 if __name__ == '__main__':
+
+    initialize_debugger()
+
     app.run(host='0.0.0.0', port=5000, debug=True)

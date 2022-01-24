@@ -8,6 +8,7 @@ flask = "*"
 jsonify = "*"
 flask-restful = "*"
 pymongo = "*"
+debugpy = "*"
 
 [dev-packages]
 

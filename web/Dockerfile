@@ -2,7 +2,7 @@ FROM python:3
 
 RUN pip install pipenv
 
-WORKDIR /usr/src/app
+WORKDIR /web
 
 COPY Pipfile .
 
