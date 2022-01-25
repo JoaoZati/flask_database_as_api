@@ -153,6 +153,92 @@ class Store(Resource):
         return jsonify(result)
 
 
+class Get(Resource):
+    def get(self):
+        username, password, status_code, message = get_data()
+
+        if status_code != 200:
+            json_data = {
+                "Message": message,
+                "status": status_code,
+            }
+            return jsonify(json_data)
+        
+        correct_pw = verify_pw(username, password)
+
+        if not correct_pw:
+            result = {
+                "message": "Wrong username or password",
+                "status": 301
+            }
+            return jsonify(result)
+        
+        tokens = verify_tokens(username)
+
+        if tokens < 1:
+            result = {
+                "message": "Your dont have enouth tokes to change the sentence",
+                "status": 302
+            }
+            return jsonify(result)
+        
+        sentence = users.find({}, {"Username": username, "Sentence": 1})[0]["Sentence"]
+
+        users.update_one(
+            {"Username": username},
+            {
+                "$set": {
+                    "tokens": tokens - 1
+                    }
+            }
+        )
+
+        result = {
+            "message": "Ok, you successfuly got your sentence",
+            "tokens": f"you have: {tokens - 1} tokens",
+            "sentece": sentence,
+            "status": status_code,
+        }
+        return jsonify(result)
+
+
+class AddTokens(Resource):
+    def post(self):
+        username, password, status_code, message = get_data()
+
+        if status_code != 200:
+            json_data = {
+                "Message": message,
+                "status": status_code,
+            }
+            return jsonify(json_data)
+        
+        correct_pw = verify_pw(username, password)
+
+        if not correct_pw:
+            result = {
+                "message": "Wrong username or password",
+                "status": 301
+            }
+            return jsonify(result)
+        
+        tokens = verify_tokens(username)
+        
+        users.update_one(
+            {"Username": username},
+            {
+                "$set": {
+                    "tokens": tokens + 5
+                    }
+            } 
+        )
+
+        result = {
+            "message": "Ok, you seccesfuly have add 5 tokens",
+            "tokens": f"you have: {tokens + 5} tokens",
+            "status": status_code,
+        }
+        return jsonify(result)
 
 @app.route('/')
 def hello_word():
@@ -161,7 +247,8 @@ def hello_word():
 
 api.add_resource(Register, "/register")
 api.add_resource(Store, "/store")
-
+api.add_resource(Get, "/get")
+api.add_resource(AddTokens, "/add-tokens")
 
 if __name__ == '__main__':
     initialize_debugger()
