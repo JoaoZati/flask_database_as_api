@@ -33,8 +33,6 @@ def get_data(sentence=False, tokens=False):
         password = str(post_data['password'])
         if sentence:
             sentence = str(post_data['sentence'])
-        if tokens:
-            tokens = int(users.find({}, {"Username": username, "tokens": 1})[0]["tokens"])
     except Exception as e:
         username, password = '', ''
         status_code = 303
@@ -43,9 +41,6 @@ def get_data(sentence=False, tokens=False):
     list_return = [username, password, status_code, message]
     if sentence:
         list_return.append(sentence)
-    
-    if tokens:
-        list_return.append(tokens)
 
     return list_return
 
@@ -59,6 +54,16 @@ def verify_pw(username, password):
         print(e)
 
     return False
+
+
+def verify_tokens(username):
+    try:
+        tokens = int(users.find({}, {"Username": username, "tokens": 1})[0]["tokens"])
+    except Exception as e:
+        print(e)
+        tokens = 0
+    
+    return tokens
 
 
 class Register(Resource):
@@ -102,11 +107,7 @@ class Register(Resource):
 
 class Store(Resource):
     def post(self):
-        username, password, status_code, message, sentence, tokens = get_data(sentence=True, tokens=True)
-
-        if not tokens:
-            message = 'You have no tokens'
-            status_code = 301
+        username, password, status_code, message, sentence = get_data(sentence=True)
 
         if status_code != 200:
             json_data = {
@@ -120,13 +121,34 @@ class Store(Resource):
         if not correct_pw:
             result = {
                 "message": "Wrong username or password",
+                "status": 301
+            }
+            return jsonify(result)
+        
+        tokens = verify_tokens(username)
+
+        if tokens <= 1:
+            result = {
+                "message": "Your dont have enouth tokes to change the sentence",
                 "status": 302
             }
             return jsonify(result)
         
+        users.update_one(
+            {"Username": username},
+            {
+                "$set": {
+                    "Sentence": sentence,
+                    "tokens": tokens - 1
+                    }
+            } 
+        )
+
         result = {
-            "message": "Ok, you have enouth tokens",
-            "tokens": f"you have {tokens}"
+            "message": "Ok, your sentence was sucessfully updated",
+            "tokens": f"you have: {tokens - 1} tokens",
+            "new_sentece": sentence,
+            "status": status_code,
         }
         return jsonify(result)
 
