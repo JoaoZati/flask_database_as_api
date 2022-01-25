@@ -154,7 +154,7 @@ class Store(Resource):
 
 
 class Get(Resource):
-    def get(self):
+    def post(self):
         username, password, status_code, message = get_data()
 
         if status_code != 200:
