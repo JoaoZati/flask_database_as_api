@@ -11,6 +11,8 @@ from flask_restful import Api, Resource
 from pymongo import MongoClient
 from debugger import initialize_debugger
 
+import bcrypt
+
 app = Flask(__name__)
 api = Api(app)
 
@@ -38,21 +40,40 @@ def get_data():
 
 class Register(Resource):
     def post(self):
-        usarname, password, status_code, message = get_data()
+        username, password, status_code, message = get_data()
 
         if status_code != 200:
             json_data = {
                 "Message": message,
-                "Status Code": status_code,
+                "status": status_code,
             }
             return jsonify(json_data)
 
-        return jsonify(
+        try:
+            if users.find({}, {"Username": username})[0]['Username'] == username:
+                return jsonify(
+                    {"message": "Username already exists",
+                    "status": 304}
+                )
+        except Exception as e:
+            print(e)
+
+        hashed_pw = bcrypt.hashpw(password, bcrypt.gensalt())
+
+        users.insert_one(
             {
-            "Message": "Ok",
-            "Status Code": status_code
+                "Username": username,
+                "Password": hashed_pw,
+                "Sentence": ""
             }
         )
+
+        result = {
+            "status": status_code,
+            "message": "You seccesfully signed up for the API"
+            }
+
+        return jsonify(result)
 
 
 @app.route('/')
